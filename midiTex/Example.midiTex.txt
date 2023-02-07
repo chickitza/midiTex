@@ -1,0 +1,10 @@
+Example, bpm=120, t=0, v=72, d=0.5/4
+%%%
+0: 0,piano1,t=0,v=-10,d=4
+1: 8,piano2
+2: 0,piano3
+%%%
+0: ch(C;F;G;Amin), t=-12, o=1
+1: ar(C;F), t=-24, v=12, d=4 ,o=1
+1: ar(G;Amin), t=-24, v=12, d=4 ,o=1
+2: cd[1.5]{gce};g;[1]g*;e

@@ -1,0 +1,10 @@
+NewFile, bpm=120, v=60, t=0, d=1/2
+%%%
+0: 0, piano1, t=12
+1: 29, piano2, v=-24
+2: 8, piano3, t=-12, v=-12
+%%%
+0: c-c g-g a-a ;[2]{ceg} f-f e-e d-d [2]{egc}
+1: ch(C; C on E; F on C; C; Bdim; C; Csus4; C)
+2: ar8(C), d = 4
+2: ar4(F; C; G; C; G; C), d = 2

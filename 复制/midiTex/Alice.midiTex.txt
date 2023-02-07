@@ -1,0 +1,158 @@
+Alice, bpm=55, v=72, t=0, d=0.25/1.5
+%%%
+0: 0, piano1, v=-12
+1: 0, piano2, v=-12,t=-12
+def: tr=[0.75],do=[0.5],f1=[0.375],f2=[0.125]
+%%%
+0: ;ee^;e;e^;e;b;d;cdoa*c;eadob*;e;g#bdoc* ,t=12
+1: aea		,o=2
+1: eeg#		,o=0.75,t=-12
+1: aea		,o=0.75
+
+0: ee;e^;e;e^;e;b;d;cdoa*c;eadob*;e;c;bdoa**
+1: *aea		,o=2
+1: eeg#		,o=0.75,t=-12
+1: aea*		,o=0.75
+
+0: ;ee^;e;e^;e;b;d;cdoa*c;eadob*;e;g#bdoc* ,t=12
+1: aea		,o=2
+1: eeg#		,o=0.75,t=-12
+1: aea		,o=0.75
+
+0: ee;e^;e;e^;e;b;d;cdoa*c;eadob*;e;c;bdoa*
+1: *aea		,o=2
+1: eeg#		,o=0.75,t=-12
+1: aea		,o=0.75
+
+0: bcdtre;g;f;etrdf;e;dtrce;d;cdob*,t=12
+1: cgc		,o=0.75
+1: ggb		,o=0.75,t=-12
+1: aea		,o=0.75
+0: ee**-ee	
+1: eee**-ee**	,o=0.75,t=-12
+
+0: **d#e**;d#;e;d#	,t=12
+1: d#e**;d#;e***	,t=24
+
+0: ;ed#;e;b;d;cdoa*c;eadob*;e;g#bdoc*,t=12
+1: aea		,o=1.5
+1: eeg#		,o=0.75,t=-12
+1: aea		,o=0.75
+
+0: ;ee^;e;e^;e;b;d;cdoa*c;eadob*;e;g#bdoc* ,t=12
+1: aea		,o=2
+1: eeg#		,o=0.75,t=-12
+1: aea		,o=0.75
+
+0: ee;e^;e;e^;e;b;d;cdoa*c;eadob*;e;c;bdoa*
+1: *aea		,o=2
+1: eeg#		,o=0.75,t=-12
+1: aea		,o=0.75
+
+0: {ec}-{fc}-{ec};[0.05]f;[0.05]a[0.9]cf1f;f2e-doedod
+0: ;f1b^f2a-agfedcdob^doa		,t=24
+0: ;[0.03]b^[0.095]ag;ab^		,t=12,d=0.125
+1: {b^c}-{ac}-{gc};f;ac;a;c;a	,t=12
+1: fa#d;a#;d;a#
+1: fe;(60){fgb^};e;(60){fgb^};e
+1: fac;a;c;a
+
+0:[1]cdd#	[0.75]e-ef1f;f2a;[1]cf1d;f2b	,t=12
+1: fac;a;c;a
+1: egc;g;{dd};f
+1: ge;g;e;g;e
+
+0: cg;g;g;a;g;b;g;c;g;d;g	,d=0.125,t=12
+0: egc;bagfed;g;fd		,d=0.125,t=12
+1: do{ce}*{fg}-{eg}-{dfg}-do{ceg};do{fa};do{gb},t=12
+
+0: cg;g;g;a;g;b;g;c;g;d;g	,d=0.125,t=12
+0: egc;bagfed;g;fd		,d=0.125,t=12
+1: do{ce}*{fg}-{eg}-{dfg}-do{ceg};do{fa};do{gb},t=12
+
+0: ef;ed#;e;b;e;d#;e;b;e;d#		,d=0.125,t=12
+1: do{g#b}[1]*
+
+0: [0.75]e;b;e;d#;[0.75]e;b;e**;d#;e**;d#	,t=12
+1: [1.5]*[1.25]*d#e**;d#;e*			,t=24
+
+0: e;e^;e;b;d;cdoa*c;eadob*;e;g#bdoc* ,t=12
+1: aea		,o=1.5
+1: eeg#		,o=0.75,t=-12
+1: aea		,o=0.75
+
+0: ee;e^;e;e^;e;b;d;cdoa*c;eadob*;e;c;bdoa*
+1: *aea		,o=2
+1: eeg#		,o=0.75,t=-12
+1: aea*		,o=0.75
+
+0: bcdtre;g;f;etrdf;e;dtrce;d;cdob*,t=12
+1: cgc		,o=0.5
+1: ggb		,o=0.75,t=-12
+1: aea		,o=0.75
+0: ee**-ee	
+1: eee**-ee**	,o=0.75,t=-12
+
+0: **d#e**;d#;e;d#	,t=12
+1: d#e**;d#;e***	,t=24
+
+0: ;ed#;e;b;d;cdoa*c;eadob*;e;g#bdoc**,t=12
+1: aea		,o=1.5
+1: eeg#		,o=0.75,t=-12
+1: aea		,o=0.75
+
+0: ;ee^;e;e^;e;b;d;cdoa*c;eadob*;e;g#bdoc* ,t=12
+1: *aea		,o=2
+1: eeg#		,o=0.75,t=-12
+1: aea		,o=0.75
+
+0: ee;e^;e;e^;e;b;d;cdoa*c;eadob*;e;c;b
+1: *aea		,o=2
+1: eeg#***	,o=0.75,t=-12
+
+0: doa[1]*[1.5]{egb^c#}[1]{fad}{c#e}{df}-[1]{g#df}-do{g#df};[1.5]{ace},t=12
+1: a-a-a-a-a-a-a-a-a-a-a-a-a-a-a-a-a-a-a-a-a-a-a-a-a-a-a-a-a-a
+
+0: ;[1]{fd}{ec}{db}[1]{cf#a}-do{ca}-do{ca};do{ec};do{db}[1.5]{ca}
+1: {da}-{da}-{da}-{da}-{da}-{da}-{d#a}-{d#a}-{d#a}-{d#a}-{d#a}-{d#a}-{ea}-{ea}-{ea}-{ea};{eg#}-{eg#};{aa}-a-a-a-a-a,t=-12
+
+0: [1.5]{egb^c#}[1]{fad}{c#e}{df}-[1]{df}-do{df}
+0: [1.5]{df};[1]{ge^}{fd}{e^c}[1]{dfb^}do{dfa},t=12
+0: [1]{dfa^}-do{dfa^}[1]{cea}**do{eb}[1]*
+1: a-a-a-a-a-a-a-a-a-a-a-a-a-a-a-a-a-a
+1: a-a-a-a-a-a-a-a-a-a-a-a-a-a-a-a-a-a,t=1
+1: b-b-b-b-b-b[1]c**do{eg#}[1]*
+
+0: aceace;dcba;ceace;dcba;ceace;dcbb^ag#gf#fed#dc#cbb^ag#gf#f,d=0.1667
+1:doa,t=-12
+1:*{ace}-{ace}*-{ace}-{ace}*-{ace}-{ace},t=12,d=0.5
+
+0: e;e^;e;b;d;cdoa*c;eadob*;e;g#bdoc* ,t=12
+1: aea		,o=4
+1: eeg#		,o=0.75,t=-12
+1: aea		,o=0.75
+
+0: ee;e^;e;e^;e;b;d;cdoa*c;eadob*;e;c;bdoa*
+1: *aea		,o=2
+1: eeg#		,o=0.75,t=-12
+1: aea*		,o=0.75
+
+0: bcdtre;g;f;etrdf;e;dtrce;d;cdob*,t=12
+1: cgc		,o=0.5
+1: ggb		,o=0.75,t=-12
+1: aea		,o=0.75
+0: ee**-ee	
+1: eee**-ee**	,o=0.75,t=-12
+
+0: **d#e**;d#;e;d#	,t=12
+1: d#e**;d#;e***	,t=24
+
+0: ;ed#;e;b;d;cdoa*c;eadob*;e;g#bdoc**,t=12
+1: aea		,o=1.5
+1: eeg#		,o=0.75,t=-12
+1: aea		,o=0.75
+
+0: ;ee^;e;e^;e;b;d;cdoa*c;eadob*;e;c;b[1]{ca} ,t=12
+1: aea		,o=2.25
+1: eeg#		,o=0.75,t=-12
+1: {aa}		,o=0.75,d=1
