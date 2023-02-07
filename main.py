@@ -6,8 +6,9 @@ import time
 import mido
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import QPointF, QLineF, QTimer, Qt
-from PySide6.QtGui import QGuiApplication, QColor, QPen, QTextCharFormat, QBrush, QTextCursor, QIcon
-from PySide6.QtWidgets import QGraphicsRectItem, QGraphicsLineItem
+from PySide6.QtGui import QGuiApplication, QColor, QPen, QTextCharFormat, QBrush, QTextCursor, QIcon, QUndoCommand, \
+    QUndoStack
+from PySide6.QtWidgets import QGraphicsRectItem, QGraphicsLineItem, QTextEdit
 from mido import Message
 import mido.backends.rtmidi
 from qt_material import apply_stylesheet
@@ -760,6 +761,34 @@ def arpeggio(root_string, note_num=8, total_duration=4.0):
     return arpeggio_string
 
 
+# class InsertChars(QUndoCommand):
+#     def __init__(self, index, chars, document):
+#         super().__init__("Insert characters")
+#         self.index = index
+#         self.chars = chars
+#         self.doc = document
+#
+#     def redo(self) -> None:
+#         self.doc.insert(self.index, self.chars)
+#
+#     def undo(self) -> None:
+#         self.doc.remove(self.index, self.chars)
+#
+#
+# class RemoveChars(QUndoCommand):
+#     def __init__(self, index, chars, document):
+#         super().__init__("Remove characters")
+#         self.index = index
+#         self.chars = chars
+#         self.doc = document
+#
+#     def redo(self) -> None:
+#         self.doc.remove(self.index, self.chars)
+#
+#     def undo(self) -> None:
+#         self.doc.insert(self.index, self.chars)
+
+
 class HelpWindow(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
@@ -1005,11 +1034,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.Ui.actionrun.triggered.connect(self.save_and_play)
         self.Ui.actionPrograma_Rule_Ctrl_R.triggered.connect(self.open_help)
         self.Ui.actionresult.triggered.connect(self.set_show_result)
-        self.Ui.note_browser.keyReleaseEvent = self.text_brush
-        self.Ui.track_browser.keyReleaseEvent = self.track_brush
         self.Ui.actioncolor.triggered.connect(self.set_colorful_text)
+        # self.Ui.note_browser.keyReleaseEvent = self.text_brush
+
         self.note_browser_key_press_event = self.Ui.note_browser.keyPressEvent
+        self.track_browser_key_press_event = self.Ui.track_browser.keyPressEvent
+
         self.Ui.note_browser.keyPressEvent = self.complete_bracket
+        self.Ui.track_browser.keyPressEvent = self.track_brush
 
         self.Screen = QGuiApplication.primaryScreen().geometry()
         self.thread_list = []
@@ -1049,12 +1081,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.def_format = QTextCharFormat()
         self.def_format.setForeground(QBrush(QColor(148, 108, 255)))
 
-        self.track_brush(0)
+        self.Ui.note_browser.setUndoRedoEnabled(True)
+
+        self.track_brush()
+        self.text_brush()
         self.show()
 
     def complete_bracket(self, event):
+        self.Ui.note_browser.textCursor().beginEditBlock()
         cursor = self.Ui.note_browser.textCursor()
-
         if event.key() == Qt.Key_BraceLeft:
             if cursor.selectedText() == '':
                 self.Ui.note_browser.insertPlainText("{}")
@@ -1113,13 +1148,20 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.Ui.note_browser.insertPlainText("]")
         else:
             self.note_browser_key_press_event(event)
+        print(event)
+        if event.key() != Qt.Key_Control and event.text() != '\u001A' and event.text() != '\u0003' and event.text() != '\u0001' and event.text() != '\u0019' and event.key() != Qt.Key_Shift:
+            self.text_brush()
+        self.Ui.note_browser.textCursor().endEditBlock()
 
     def set_style(self):
         self.Ui.midi_browser.setStyleSheet("color: rgb(150,150,150); font-size: 11pt; font-family: Cascadia Code;")
         self.Ui.track_browser.setStyleSheet("color: rgb(150,150,150); font-size: 11pt; font-family: Cascadia Code;")
         self.Ui.note_browser.setStyleSheet("font-size: 11pt; font-family: Cascadia Code;")
 
-    def track_brush(self, event):
+    def track_brush(self, event=None):
+        self.Ui.track_browser.textCursor().beginEditBlock()
+        if event is not None:
+            self.track_browser_key_press_event(event)
         track_doc = self.Ui.track_browser.document()
         track_text = self.Ui.track_browser.toPlainText()
         track_line = track_text.replace(' ', '').replace('\t', '').split('\n')
@@ -1151,9 +1193,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 cursor.setPosition(i + len(defines[0]), QTextCursor.KeepAnchor)
                 if cursor.selectedText() == defines[0]:
                     cursor.mergeCharFormat(self.def_format)
-        self.text_brush(0)
 
-    def text_brush(self, event):
+        self.Ui.track_browser.textCursor().endEditBlock()
+
+    def text_brush(self, event=0):
         if self.colorful_text:
             # 获取文档中所有的数字字符并设置字符格式
             doc = self.Ui.note_browser.document()
@@ -1217,6 +1260,7 @@ class MainWindow(QtWidgets.QMainWindow):
                         continue
         else:
             pass
+            # # 默认颜色设置
             # cursor = self.Ui.note_browser.textCursor()
             # cursor.select(QTextCursor.Document)
             # cursor.mergeCharFormat(self.defaultFormat)
@@ -1244,11 +1288,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def set_colorful_text(self):
         self.colorful_text = self.Ui.actioncolor.isChecked()
-        if self.colorful_text:
-            self.Ui.note_browser.setUndoRedoEnabled(False)
-        else:
-            self.Ui.note_browser.setUndoRedoEnabled(True)
-        self.track_brush(0)
+        self.track_brush()
 
     def open_help(self):
         self.program_window = HelpWindow()
@@ -1294,7 +1334,7 @@ class MainWindow(QtWidgets.QMainWindow):
             file.write(midi_text + '\n%%%\n')
             file.write(track_text + '\n%%%\n')
             file.write(notes_text)
-
+        # todo track_name 重复利用：删除解析部分
         # 解析音轨参数
         keys = []
         track_velocity_set = []
@@ -1339,7 +1379,7 @@ class MainWindow(QtWidgets.QMainWindow):
             set_track(mid, program, name, bmp, track_offset)
 
         name2index = dict(zip(keys, range(len(keys))))
-
+        # todo track_name 重复利用：使用track_name检测音轨标识符，记得去掉冒号
         # 解析音符
         select_text = notes_text[select_start:select_end]
         if select_text != '':
@@ -1439,7 +1479,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.Ui.track_browser.setText(strings[1])
         self.Ui.note_browser.setText(strings[2])
 
-        self.track_brush(1)
+        self.track_brush()
 
     def new_file(self):
         with open("midiTex/Default", "r") as f:
@@ -1450,7 +1490,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.Ui.track_browser.setText(strings[1])
         self.Ui.note_browser.setText(strings[2])
 
-        self.track_brush(0)
+        self.track_brush()
 
     def open_program_list(self):
         self.program_window = ProgramWindow()
