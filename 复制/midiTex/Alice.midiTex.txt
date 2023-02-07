@@ -4,10 +4,10 @@ Alice, bpm=55, v=72, t=0, d=0.25/1.5
 1: 0, piano2, v=-12,t=-12
 def: tr=[0.75],do=[0.5],f1=[0.375],f2=[0.125]
 %%%
-0: ;ee^;e;e^;e;b;d;cdoa*c;eadob*;e;g#bdoc* ,t=12
-1: aea		,o=2
-1: eeg#		,o=0.75,t=-12
-1: aea		,o=0.75
+0: ;ee^;e;e^;e;b;d;c<doa*c;ea><dob*;e;g#b>doc* ,t=12
+1: [2]*<aea
+1: tr*><eeg#	,t=-12
+1: tr*><aea>
 
 0: ee;e^;e;e^;e;b;d;cdoa*c;eadob*;e;c;bdoa**
 1: *aea		,o=2

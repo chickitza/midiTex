@@ -1,1 +1,0 @@
-python -m nuitka --standalone --show-progress --plugin-enable=pyside6 --output-dir=release --include-qt-plugins=sensible,styles,qt_material --windows-icon-from-ico=midiTex.ico  main.py
