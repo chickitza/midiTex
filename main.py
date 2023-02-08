@@ -6,7 +6,7 @@ import time
 import mido
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import QPointF, QLineF, QTimer, Qt
-from PySide6.QtGui import QGuiApplication, QColor, QPen, QTextCharFormat, QBrush, QTextCursor, QIcon, QFontDatabase
+from PySide6.QtGui import QGuiApplication, QColor, QPen, QTextCharFormat, QBrush, QTextCursor, QIcon
 from PySide6.QtWidgets import QGraphicsRectItem, QGraphicsLineItem
 from mido import Message
 import mido.backends.rtmidi
