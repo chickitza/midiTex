@@ -1,11 +1,11 @@
-Lightful, bpm=120, v=60, t=-6, d=1/4
+Lightful, bpm=120, v=60, t=-5, d=1/4
 %%%
 0: 88, piano1, t=12,v=-12
 1: 54, piano2, v=-18
 2: 90, piano3, t=-12, v=-12, d=1
-3: 12, piano4, v=-12
+3: 11, piano4, v=-12
 4: 122, Seashore,v=-24
-def: do=[2],hf=(50)[0.5],qt=(50)[0.25]
+def: do=[2],hf=\50[0.5],qt=\50[0.25]
 %%%
 4: c[1.5]*f[1.5]*g[1.5]*;f*,d=6
 
@@ -26,7 +26,7 @@ def: do=[2],hf=(50)[0.5],qt=(50)[0.25]
 
 0: doegc- do{eac};do{beg} ;do{cfa};{bg}{bf}; [1.5]{geg};qteqtdcg
 1: ch(C)
-1: ch(Amin;Emin;F;G),d=2
+1: ch(Amin;Emin;F;G),d=2,t=12
 1: ch(C)
 2: *c**gc;gc*;hffhfa;gd;e*g;c
 3: ar8(C)

@@ -80,6 +80,9 @@ li.checked::marker { content: &quot;\2612&quot;; }
       <property name="cursor" stdset="0">
        <cursorShape>IBeamCursor</cursorShape>
       </property>
+      <property name="locale">
+       <locale language="English" country="UnitedStates"/>
+      </property>
       <property name="undoRedoEnabled">
        <bool>false</bool>
       </property>

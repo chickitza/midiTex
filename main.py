@@ -574,6 +574,218 @@ def add_seq(to_track, chord, velocity=72, offset=0, times=120, transposition=0, 
     elif is_list_of_int(chord_set[-1]):
         return chord_set[-1][-1]
 
+#
+# def sharp(messages):
+#     if type(messages[0]) == str:
+#         messages[1] += 1
+#     else:
+#         for i, message in enumerate(messages):
+#             messages[i] = sharp(message)
+#     return messages
+#
+#
+# def flat(messages):
+#     if type(messages[0]) == str:
+#         messages[1] -= 1
+#     else:
+#         for i, message in enumerate(messages):
+#             messages[i] = sharp(message)
+#     return messages
+
+
+def make_list(messages):
+    message_list = []
+    for message in messages:
+        if len(message) == 0:
+            continue
+        if type(message[0]) == str:
+            message_list.append(message)
+        else:
+            for sub_message in make_list(message):
+                message_list.append(sub_message)
+    return message_list
+
+
+def add_branch(branch_type, notes_name, refer, default_time, default_velocity, descend, unison, arp_time, default_transposition,
+               the_time):
+    message_box = []
+    depth = 0
+    chord_mode = False
+    branch_text = []
+    time_to_add = default_time
+    velocity_to_add = default_velocity
+    transposition = default_transposition
+    if branch_type == 0:
+        refer += transposition
+    default_refer = refer
+    duration_mode = False
+    velocity_mode = False
+    duration_text = ''
+    velocity_text = ''
+    for note_num, note in enumerate(notes_name):
+        if chord_mode:
+            if note == '}':
+                chord_mode = False
+                # 执行子串
+                message_box.append([])
+                branch_text.reverse()
+                result_save = []
+                for i, branch in enumerate(branch_text[1:]):
+                    result = add_branch(1, branch, refer, time_to_add, velocity_to_add, descend, unison,
+                                        0, transposition, the_time + (len(branch_text) - 2 - i) * arp_time)
+                    message_box[-1].append(result[0])
+                    refer = result[1]
+                    descend = True
+                    unison = False
+                    if i == 0:
+                        result_save = result
+                refer = result_save[1]
+                descend = result_save[2]
+                the_time = result_save[3]
+                time_to_add = default_time
+                velocity_to_add = default_velocity
+                transposition = default_transposition
+                unison = False
+            else:
+                if note == '#' or note == '^':
+                    branch_text[-2] += note
+                else:
+                    branch_text[-1] += note
+                if 96 < ord(note) < 104:
+                    branch_text.append('')
+            continue
+        if depth > 0:
+            if note == ')':
+                depth -= 1
+                if depth == 0:
+                    # 执行子串
+                    message_box.append([])
+                    result = []
+                    for i, branch in enumerate(branch_text):
+                        if i == 0:
+                            result = add_branch(1, branch, refer, time_to_add, velocity_to_add, descend, unison,
+                                                arp_time, transposition, the_time)
+                            message_box[-1].append(result[0])
+                        else:
+                            message_box[-1].append(
+                                add_branch(2, branch, refer, time_to_add, velocity_to_add, descend, unison, arp_time,
+                                           transposition, the_time))
+                    refer = result[1]
+                    descend = result[2]
+                    the_time = result[3]
+                    time_to_add = default_time
+                    velocity_to_add = default_velocity
+                    transposition = default_transposition
+                    unison = False
+                    continue
+            if note == '|' and depth == 1:
+                branch_text.append('')
+            else:
+                branch_text[-1] += note
+            if note == '(':
+                depth += 1
+            continue
+        if velocity_mode:
+            if note.isdigit() or note == '.':
+                velocity_text += note
+            else:
+                velocity_mode = False
+                velocity_to_add = int(velocity_text)
+        if 96 < ord(note) < 104:
+            if unison:
+                note_to_add = fit_in_range(note_mapping[note] + transposition, refer - 6, refer + 6)
+                unison = False
+            elif descend:
+                note_to_add = fit_in_range(note_mapping[note] + transposition, refer - 12, refer - 1)
+            else:
+                note_to_add = fit_in_range(note_mapping[note] + transposition, refer + 1, refer + 12)
+            message_box.append([])
+            message_box[-1].append(['note_on', note_to_add, velocity_to_add, the_time])
+            the_time += time_to_add
+            time_to_add = default_time
+            velocity_to_add = default_velocity
+            transposition = default_transposition
+            message_box[-1].append(['note_off', note_to_add, velocity_to_add, the_time])
+            refer = note_to_add
+            continue
+        if note == ';':
+            descend = not descend
+            continue
+        if note == '#':
+            transposition += 1
+            continue
+        if note == '^':
+            transposition -= 1
+            continue
+        if note == '$':
+            refer = default_refer
+            continue
+        if note == '*':
+            message_box.append([])
+            message_box[-1].append(['note_on', refer, 0, the_time])
+            the_time += time_to_add
+            time_to_add = default_time
+            message_box[-1].append(['note_off', refer, 0, the_time])
+            continue
+        if note == '-':
+            unison = True
+            continue
+        if note == '[':
+            duration_mode = True
+            duration_text = ''
+            continue
+        if note == ']':
+            duration_mode = False
+            time_to_add = int(480 * float(duration_text))
+            continue
+        if note == '{':
+            chord_mode = True
+            branch_text = ['']
+            continue
+        if duration_mode:
+            duration_text += note
+            continue
+        if note == '\\':
+            velocity_mode = True
+            velocity_text = ''
+            continue
+        if note == '<':
+            message_box.append(['control_change', 64, 127, the_time])
+            continue
+        if note == '>':
+            message_box.append(['control_change', 64, 0, the_time])
+            continue
+        if note == '(':
+            depth += 1
+            branch_text = ['']
+            continue
+    if branch_type == 0:
+        message_list = make_list(message_box)
+        print(message_list)
+        sorted_list = sorted(message_list, key=lambda x: x[3])
+        for i in range(len(sorted_list) - 1, 0, -1):
+            sorted_list[i][3] = sorted_list[i][3] - sorted_list[i - 1][3]
+        return sorted_list
+    elif branch_type == 1:
+        return message_box, refer, descend, the_time
+    elif branch_type == 2:
+        return message_box
+
+
+def add_line(to_mid, track_num, notes_name, velocity=default_volume, offset=0, duration=0.5, transposition=0,
+             arpeggio_time=0):
+    to_track = to_mid.tracks[track_num]
+    default_time = int(480 * duration)
+    message_list = add_branch(0, notes_name, 62, default_time, velocity, False, True, arpeggio_time, transposition,
+                              offset)
+    for message in message_list:
+        if message[0] == 'control_change':
+            to_track.append(
+                Message('control_change', control=message[1], value=message[2], time=message[3], channel=track_num))
+        else:
+            to_track.append(
+                Message(message[0], note=message[1], velocity=message[2], time=message[3], channel=track_num))
+
 
 def add(to_mid, track_num, notes_name, velocity=default_volume, offset=0, duration=0.5, transposition=0,
         arpeggio_time=0):
@@ -1063,7 +1275,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # 圆括号
         self.bracketFormat3 = QTextCharFormat()
-        self.bracketFormat3.setForeground(QBrush(QColor(118, 118, 168)))
+        self.bracketFormat3.setForeground(QBrush(QColor(158, 158, 188)))
 
         self.ch_format = QTextCharFormat()
         self.ch_format.setForeground(QBrush(QColor(255, 153, 51)))
@@ -1108,8 +1320,13 @@ class MainWindow(QtWidgets.QMainWindow):
             self.Ui.note_browser.insertPlainText("[]")
             self.Ui.note_browser.moveCursor(QTextCursor.Left)
         elif event.key() == Qt.Key_ParenLeft:
-            self.Ui.note_browser.insertPlainText("()")
-            self.Ui.note_browser.moveCursor(QTextCursor.Left)
+            if cursor.selectedText() == '':
+                self.Ui.note_browser.insertPlainText("()")
+                self.Ui.note_browser.moveCursor(QTextCursor.Left)
+            else:
+                length = len(cursor.selectedText())
+                self.Ui.note_browser.insertPlainText("(" + cursor.selectedText() + ")")
+                self.Ui.note_browser.moveCursor(QTextCursor.Left)
         elif event.key() == Qt.Key_Backspace and cursor.selectedText() == '':
             cursor.setPosition(cursor.position() - 1)
             cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor, 2)
@@ -1211,7 +1428,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 cursor.setPosition(i + 1, QTextCursor.KeepAnchor)
                 if char.isalpha():
                     continue
-                elif char.isdigit() or char == '[' or char == ']' or char == '.':
+                elif char.isdigit() or char == '[' or char == ']' or char == '.' or char == '\\':
                     cursor.setCharFormat(self.numberFormat)
                     continue
                 elif char == ';' or char == '-' or char == '$' or char == '=' or char == '*' or char == '<' or char == '>':
@@ -1220,7 +1437,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 elif char == '{' or char == '}':
                     cursor.setCharFormat(self.bracketFormat1)
                     continue
-                elif char == '(' or char == ')':
+                elif char == '(' or char == ')' or char == '|':
                     cursor.setCharFormat(self.bracketFormat3)
                     continue
 
@@ -1389,7 +1606,7 @@ class MainWindow(QtWidgets.QMainWindow):
             temp = note_text.split(':')
             if len(temp) < 2 or temp[1] == '':
                 continue
-            track = name2index[temp[0]+':']
+            track = name2index[temp[0] + ':']
             note_transposition = track_transposition_set[track]
             note_velocity = track_velocity_set[track]
             note_duration = track_duration_set[track]
@@ -1408,7 +1625,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 elif note[0] == 'o':
                     note_offset = int(float(note[2:]) * 480)
                 elif note[0] == 'a':
-                    note_arp = float(note[2:])
+                    note_arp = int(note[2:])
             if note_para[0][:2] == 'ch':
                 notes_string = choir(note_para[0][3:-1], note_duration_total)
             elif note_para[0][:2] == 'ar':
@@ -1420,7 +1637,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 notes_string = arpeggio(arp_num[1][:-1], note_num, note_duration_total)
             else:
                 notes_string = note_para[0]
-            add(mid, track, notes_string, note_velocity, note_offset, note_duration, note_transposition, note_arp)
+            add_line(mid, track, notes_string, note_velocity, note_offset, note_duration, note_transposition, note_arp)
+            # add(mid, track, notes_string, note_velocity, note_offset, note_duration, note_transposition, note_arp)
 
         # save the Tex file
         mid.save('midi/' + filename)

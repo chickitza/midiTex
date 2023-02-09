@@ -77,6 +77,7 @@ class Ui_MainWindow(object):
         font1.setBold(False)
         self.note_browser.setFont(font1)
         self.note_browser.viewport().setProperty("cursor", QCursor(Qt.IBeamCursor))
+        self.note_browser.setLocale(QLocale(QLocale.English, QLocale.UnitedStates))
         self.note_browser.setUndoRedoEnabled(False)
         self.note_browser.setReadOnly(False)
         self.note_browser.setAcceptRichText(False)
