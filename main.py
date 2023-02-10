@@ -2,6 +2,7 @@ import os
 import sys
 import threading
 import time
+import re
 
 import mido
 from PySide6 import QtCore, QtGui, QtWidgets
@@ -31,7 +32,7 @@ note_mapping = {
 color_set = [[0, 188, 212], [139, 195, 74], [255, 64, 129], [255, 196, 1], [255, 61, 0], [0, 150, 136],
              [0, 229, 255], [224, 64, 251], [0, 150, 136], [255, 23, 68]]
 tunes = ['c', 'd', 'e', 'f', 'g', 'a', 'b']
-notes = ['c', 'c#', 'd', 'd#', 'e', 'f', 'f#', 'g', 'g#', 'a', 'a#', 'b']
+notes = ['c', '#c', 'd', '#d', 'e', 'f', '#f', 'g', '#g', 'a', '#a', 'b']
 notes_h = {
     'C': 0,
     'C#': 1,
@@ -311,11 +312,35 @@ program_class = ['钢琴类', '色彩打击乐器类', '风琴类', '吉他类',
                  '笛类', '合成主音类', '合成音色类', '合成效果类', '民间乐器类', '打击乐器类', '声音效果类']
 
 
-def is_list_of_int(arr):
-    if type(arr) == list:
-        return all(isinstance(i, int) for i in arr)
-    else:
-        return False
+def extract_ch(text):
+    pattern = r'ch\((.*?)\)'
+    matches = re.finditer(pattern, text)
+    result = []
+    for match in matches:
+        content = match.group(1)
+        start = match.start()
+        end = match.end()
+        result.append((content, start, end))
+    return result
+
+
+def extract_ar(text):
+    pattern = r'ar(\d+)\((.*?)\)'
+    matches = re.finditer(pattern, text)
+    result = []
+    for match in matches:
+        content = match.group(2)
+        start = match.start()
+        end = match.end()
+        result.append((content, start, end, match.group(1)))
+    return result
+
+
+# def is_list_of_int(arr):
+#     if type(arr) == list:
+#         return all(isinstance(i, int) for i in arr)
+#     else:
+#         return False
 
 
 def fit_in_range(num, start, end):
@@ -331,170 +356,170 @@ def fit_in_range(num, start, end):
     return num
 
 
-def add_node(to_track, note, velocity=72, offset=0, times=480):
-    """添加单个音符，note以60形式表示"""
-    to_track.append(Message('note_on', note=note, velocity=velocity, time=offset))
-    to_track.append(Message('note_off', note=note, velocity=velocity, time=offset + times))
-    return
+# def add_node(to_track, note, velocity=72, offset=0, times=480):
+#     """添加单个音符，note以60形式表示"""
+#     to_track.append(Message('note_on', note=note, velocity=velocity, time=offset))
+#     to_track.append(Message('note_off', note=note, velocity=velocity, time=offset + times))
+#     return
 
 
-def get_chord_set(chord, transposition, descend=False):
-    """解析字符串形式表示的和弦为note数组"""
-    chord_set = []
-    chord_subset = []
-    duration_set = []
-    velocity_set = []
-    duration = ''
-    duration_next = None
-    velocity = ''
-    velocity_next = None
-    chord_mode = False
-    duration_mode = False
-    velocity_mode = False
-    unison = False
-    new_mode = False
-    delay_mode = False
-    for c in chord:
-        if c == '$':
-            new_mode = True
-            continue
-        if c == '*':
-            if len(chord_set) > 0:
-                if type(chord_set[-1]) == int:
-                    chord_set.append(chord_set[-1])
-                else:
-                    chord_set.append(chord_set[-1][-1])
-            else:
-                chord_set.append(55 + transposition)
-            duration_set.append(duration_next)
-            duration_next = None
-            velocity_set.append(0)
-            continue
-        if c == '-':
-            unison = True
-            continue
-        if c == '{':
-            chord_mode = True
-            chord_subset = []
-            continue
-        if c == '}':
-            if len(chord_set) > 0 and not new_mode:
-                if type(chord_set[-1]) == int:
-                    refer = chord_set[-1]
-                else:
-                    refer = chord_set[-1][-1]
-                if unison:
-                    fix = fit_in_range(chord_subset[-1], refer - 6, refer + 6) - chord_subset[-1]
-                    unison = False
-                elif descend:
-                    fix = fit_in_range(chord_subset[-1], refer - 12, refer - 1) - chord_subset[-1]
-                else:
-                    fix = fit_in_range(chord_subset[-1], refer + 1, refer + 12) - chord_subset[-1]
-                chord_subset = [i + fix for i in chord_subset]
-            if new_mode:
-                new_mode = False
-            chord_set.append(chord_subset)
-            duration_set.append(duration_next)
-            velocity_set.append(velocity_next)
-            duration_next = None
-            velocity_next = None
-            chord_mode = False
-            continue
-        if c == '[':
-            duration_mode = True
-            duration = ''
-            continue
-        if c == ']':
-            duration_mode = False
-            duration_next = float(duration)
-            continue
-        if duration_mode:
-            duration = duration + c
-            continue
-        if c == '(':
-            velocity_mode = True
-            velocity = ''
-            continue
-        if c == ')':
-            velocity_mode = False
-            velocity_next = int(velocity)
-            continue
-        if velocity_mode:
-            velocity = velocity + c
-            continue
-        if chord_mode:
-            if 96 < ord(c) < 104:
-                chord_subset.append(note_mapping[c] + transposition)
-            elif c == '#':
-                chord_subset[-1] = chord_subset[-1] + 1
-            elif c == '^':
-                chord_subset[-1] = chord_subset[-1] - 1
-            if c != ' ' and len(chord_subset) > 1:
-                chord_subset[-1] = fit_in_range(chord_subset[-1], chord_subset[-2] + 1, chord_subset[-2] + 12)
-            continue
-        if 96 < ord(c) < 104:
-            chord_set.append(note_mapping[c] + transposition)
-            duration_set.append(duration_next)
-            velocity_set.append(velocity_next)
-            duration_next = None
-            velocity_next = None
-        elif c == '#':
-            chord_set[-1] = chord_set[-1] + 1
-        elif c == '^':
-            chord_set[-1] = chord_set[-1] - 1
-        elif c == '<':
-            chord_set.append(['delay_on'])
-            duration_set.append(0)
-            velocity_set.append(0)
-            delay_mode = True
-        elif c == '>':
-            chord_set.append(['delay_off'])
-            duration_set.append(0)
-            velocity_set.append(0)
-            delay_mode = True
+# def get_chord_set(chord, transposition, descend=False):
+#     """解析字符串形式表示的和弦为note数组"""
+#     chord_set = []
+#     chord_subset = []
+#     duration_set = []
+#     velocity_set = []
+#     duration = ''
+#     duration_next = None
+#     velocity = ''
+#     velocity_next = None
+#     chord_mode = False
+#     duration_mode = False
+#     velocity_mode = False
+#     unison = False
+#     new_mode = False
+#     delay_mode = False
+#     for c in chord:
+#         if c == '$':
+#             new_mode = True
+#             continue
+#         if c == '*':
+#             if len(chord_set) > 0:
+#                 if type(chord_set[-1]) == int:
+#                     chord_set.append(chord_set[-1])
+#                 else:
+#                     chord_set.append(chord_set[-1][-1])
+#             else:
+#                 chord_set.append(55 + transposition)
+#             duration_set.append(duration_next)
+#             duration_next = None
+#             velocity_set.append(0)
+#             continue
+#         if c == '-':
+#             unison = True
+#             continue
+#         if c == '{':
+#             chord_mode = True
+#             chord_subset = []
+#             continue
+#         if c == '}':
+#             if len(chord_set) > 0 and not new_mode:
+#                 if type(chord_set[-1]) == int:
+#                     refer = chord_set[-1]
+#                 else:
+#                     refer = chord_set[-1][-1]
+#                 if unison:
+#                     fix = fit_in_range(chord_subset[-1], refer - 6, refer + 6) - chord_subset[-1]
+#                     unison = False
+#                 elif descend:
+#                     fix = fit_in_range(chord_subset[-1], refer - 12, refer - 1) - chord_subset[-1]
+#                 else:
+#                     fix = fit_in_range(chord_subset[-1], refer + 1, refer + 12) - chord_subset[-1]
+#                 chord_subset = [i + fix for i in chord_subset]
+#             if new_mode:
+#                 new_mode = False
+#             chord_set.append(chord_subset)
+#             duration_set.append(duration_next)
+#             velocity_set.append(velocity_next)
+#             duration_next = None
+#             velocity_next = None
+#             chord_mode = False
+#             continue
+#         if c == '[':
+#             duration_mode = True
+#             duration = ''
+#             continue
+#         if c == ']':
+#             duration_mode = False
+#             duration_next = float(duration)
+#             continue
+#         if duration_mode:
+#             duration = duration + c
+#             continue
+#         if c == '(':
+#             velocity_mode = True
+#             velocity = ''
+#             continue
+#         if c == ')':
+#             velocity_mode = False
+#             velocity_next = int(velocity)
+#             continue
+#         if velocity_mode:
+#             velocity = velocity + c
+#             continue
+#         if chord_mode:
+#             if 96 < ord(c) < 104:
+#                 chord_subset.append(note_mapping[c] + transposition)
+#             elif c == '#':
+#                 chord_subset[-1] = chord_subset[-1] + 1
+#             elif c == '^':
+#                 chord_subset[-1] = chord_subset[-1] - 1
+#             if c != ' ' and len(chord_subset) > 1:
+#                 chord_subset[-1] = fit_in_range(chord_subset[-1], chord_subset[-2] + 1, chord_subset[-2] + 12)
+#             continue
+#         if 96 < ord(c) < 104:
+#             chord_set.append(note_mapping[c] + transposition)
+#             duration_set.append(duration_next)
+#             velocity_set.append(velocity_next)
+#             duration_next = None
+#             velocity_next = None
+#         elif c == '#':
+#             chord_set[-1] = chord_set[-1] + 1
+#         elif c == '^':
+#             chord_set[-1] = chord_set[-1] - 1
+#         elif c == '<':
+#             chord_set.append(['delay_on'])
+#             duration_set.append(0)
+#             velocity_set.append(0)
+#             delay_mode = True
+#         elif c == '>':
+#             chord_set.append(['delay_off'])
+#             duration_set.append(0)
+#             velocity_set.append(0)
+#             delay_mode = True
+#
+#         if c != ' ' and len(chord_set) > 1 and not new_mode and not delay_mode:
+#             if type(chord_set[-2]) == int:
+#                 refer = chord_set[-2]
+#             else:
+#                 refer = chord_set[-2][-1]
+#             if unison:
+#                 chord_set[-1] = fit_in_range(chord_set[-1], refer - 6, refer + 6)
+#                 unison = False
+#             elif descend:
+#                 chord_set[-1] = fit_in_range(chord_set[-1], refer - 12, refer - 1)
+#             else:
+#                 chord_set[-1] = fit_in_range(chord_set[-1], refer + 1, refer + 12)
+#
+#         if delay_mode:
+#             if new_mode or len(chord_set) < 2:
+#                 chord_set[-1].append(55 + transposition)
+#             else:
+#                 if type(chord_set[-2]) == int:
+#                     refer = chord_set[-2]
+#                 else:
+#                     refer = chord_set[-2][-1]
+#                 chord_set[-1].append(refer)
+#             delay_mode = False
+#
+#         if new_mode:
+#             new_mode = False
+#     return [chord_set, duration_set, velocity_set]
 
-        if c != ' ' and len(chord_set) > 1 and not new_mode and not delay_mode:
-            if type(chord_set[-2]) == int:
-                refer = chord_set[-2]
-            else:
-                refer = chord_set[-2][-1]
-            if unison:
-                chord_set[-1] = fit_in_range(chord_set[-1], refer - 6, refer + 6)
-                unison = False
-            elif descend:
-                chord_set[-1] = fit_in_range(chord_set[-1], refer - 12, refer - 1)
-            else:
-                chord_set[-1] = fit_in_range(chord_set[-1], refer + 1, refer + 12)
 
-        if delay_mode:
-            if new_mode or len(chord_set) < 2:
-                chord_set[-1].append(55 + transposition)
-            else:
-                if type(chord_set[-2]) == int:
-                    refer = chord_set[-2]
-                else:
-                    refer = chord_set[-2][-1]
-                chord_set[-1].append(refer)
-            delay_mode = False
-
-        if new_mode:
-            new_mode = False
-    return [chord_set, duration_set, velocity_set]
-
-
-def add_chord_set(to_track, chord_set, velocity=72, offset=0, times=480, arpeggio_time=0, to_channel=0):
-    """添加用note数组表示的和弦组，支持琶音模式"""
-    to_track.append(Message('note_on', note=chord_set[0], velocity=velocity, time=offset, channel=to_channel))
-    for note in chord_set[1:]:
-        to_track.append(Message('note_on', note=note, velocity=velocity, time=arpeggio_time, channel=to_channel))
-    for note in chord_set:
-        if to_track[-1].type == 'note_off':
-            to_track.append(Message('note_off', note=note, velocity=velocity, time=0, channel=to_channel))
-        else:
-            to_track.append(
-                Message('note_off', note=note, velocity=velocity, time=times - (len(chord_set) - 1) * arpeggio_time,
-                        channel=to_channel))
-    return
+# def add_chord_set(to_track, chord_set, velocity=72, offset=0, times=480, arpeggio_time=0, to_channel=0):
+#     """添加用note数组表示的和弦组，支持琶音模式"""
+#     to_track.append(Message('note_on', note=chord_set[0], velocity=velocity, time=offset, channel=to_channel))
+#     for note in chord_set[1:]:
+#         to_track.append(Message('note_on', note=note, velocity=velocity, time=arpeggio_time, channel=to_channel))
+#     for note in chord_set:
+#         if to_track[-1].type == 'note_off':
+#             to_track.append(Message('note_off', note=note, velocity=velocity, time=0, channel=to_channel))
+#         else:
+#             to_track.append(
+#                 Message('note_off', note=note, velocity=velocity, time=times - (len(chord_set) - 1) * arpeggio_time,
+#                         channel=to_channel))
+#     return
 
 
 # def add_chord(to_track, chord, velocity=96, offset=0, time=480, arpeggio=0, transposition=0):
@@ -502,77 +527,77 @@ def add_chord_set(to_track, chord_set, velocity=72, offset=0, times=480, arpeggi
 #     chord_set = get_chord_set(chord, transposition)
 #     add_chord_set(to_track, chord_set, velocity, offset, time, arpeggio)
 
-
-def add_seq(to_track, chord, velocity=72, offset=0, times=120, transposition=0, descend=False, last_note=None,
-            arpeggio_time=0, to_channel=0):
-    """添加单一升降序列，支持和弦及琶音"""
-    if chord == '':
-        return
-    seq_set = get_chord_set(chord, transposition, descend)
-    chord_set = seq_set[0]
-    duration_set = seq_set[1]
-    velocity_set = seq_set[2]
-    times_set = []
-    for i in range(0, len(duration_set)):
-        if duration_set[i] is None:
-            times_set.append(times)
-        else:
-            times_set.append(int(duration_set[i] * 480))
-        if velocity_set[i] is None:
-            velocity_set[i] = velocity
-
-    # 通过移动处理和弦转折情形的衔接
-    if last_note is not None and chord[0] != '$':
-        # 计算修正值
-        n = 0
-        while type(chord_set[n]) != int and not is_list_of_int(chord_set[n]):
-            n += 1
-        if type(chord_set[n]) == int:
-            if descend:
-                fix = fit_in_range(chord_set[n], last_note - 12, last_note - 1) - chord_set[n]
-            else:
-                fix = fit_in_range(chord_set[n], last_note + 1, last_note + 12) - chord_set[n]
-        else:
-            if descend:
-                fix = fit_in_range(chord_set[n][-1], last_note - 12, last_note - 1) - chord_set[n][-1]
-            else:
-                fix = fit_in_range(chord_set[n][-1], last_note + 1, last_note + 12) - chord_set[n][-1]
-        # 进行修正
-        for i, chord in enumerate(chord_set):
-            if type(chord_set[i]) == int:
-                chord_set[i] = chord + fix
-            elif is_list_of_int(chord_set[i]):
-                chord_set[i] = [j + fix for j in chord_set[i]]
-
-    if type(chord_set[0]) == int:
-        to_track.append(
-            Message('note_on', note=chord_set[0], velocity=velocity_set[0], time=offset, channel=to_channel))
-        to_track.append(
-            Message('note_off', note=chord_set[0], velocity=velocity_set[0], time=times_set[0], channel=to_channel))
-    elif is_list_of_int(chord_set[0]):
-        add_chord_set(to_track, chord_set[0], velocity_set[0], offset, times_set[0], arpeggio_time, to_channel)
-    elif chord_set[0][0] == 'delay_on':
-        to_track.append(Message('control_change', channel=to_channel, control=64, value=127))
-    elif chord_set[0][0] == 'delay_off':
-        to_track.append(Message('control_change', channel=to_channel, control=64, value=0))
-    for i in range(1, len(chord_set)):
-        if type(chord_set[i]) == int:
-            to_track.append(Message('note_on', note=chord_set[i], velocity=velocity_set[i], time=0, channel=to_channel))
-            to_track.append(
-                Message('note_off', note=chord_set[i], velocity=velocity_set[i], time=times_set[i], channel=to_channel))
-        elif is_list_of_int(chord_set[i]):
-            add_chord_set(to_track, chord_set[i], velocity_set[i], 0, times_set[i], arpeggio_time, to_channel)
-        elif chord_set[i][0] == 'delay_on':
-            to_track.append(Message('control_change', channel=to_channel, control=64, value=127))
-        elif chord_set[i][0] == 'delay_off':
-            to_track.append(Message('control_change', channel=to_channel, control=64, value=0))
-    n = -1
-    while type(chord_set[n]) != int and not is_list_of_int(chord_set[n]):
-        n -= 1
-    if type(chord_set[-1]) == int:
-        return chord_set[-1]
-    elif is_list_of_int(chord_set[-1]):
-        return chord_set[-1][-1]
+#
+# def add_seq(to_track, chord, velocity=72, offset=0, times=120, transposition=0, descend=False, last_note=None,
+#             arpeggio_time=0, to_channel=0):
+#     """添加单一升降序列，支持和弦及琶音"""
+#     if chord == '':
+#         return
+#     seq_set = get_chord_set(chord, transposition, descend)
+#     chord_set = seq_set[0]
+#     duration_set = seq_set[1]
+#     velocity_set = seq_set[2]
+#     times_set = []
+#     for i in range(0, len(duration_set)):
+#         if duration_set[i] is None:
+#             times_set.append(times)
+#         else:
+#             times_set.append(int(duration_set[i] * 480))
+#         if velocity_set[i] is None:
+#             velocity_set[i] = velocity
+#
+#     # 通过移动处理和弦转折情形的衔接
+#     if last_note is not None and chord[0] != '$':
+#         # 计算修正值
+#         n = 0
+#         while type(chord_set[n]) != int and not is_list_of_int(chord_set[n]):
+#             n += 1
+#         if type(chord_set[n]) == int:
+#             if descend:
+#                 fix = fit_in_range(chord_set[n], last_note - 12, last_note - 1) - chord_set[n]
+#             else:
+#                 fix = fit_in_range(chord_set[n], last_note + 1, last_note + 12) - chord_set[n]
+#         else:
+#             if descend:
+#                 fix = fit_in_range(chord_set[n][-1], last_note - 12, last_note - 1) - chord_set[n][-1]
+#             else:
+#                 fix = fit_in_range(chord_set[n][-1], last_note + 1, last_note + 12) - chord_set[n][-1]
+#         # 进行修正
+#         for i, chord in enumerate(chord_set):
+#             if type(chord_set[i]) == int:
+#                 chord_set[i] = chord + fix
+#             elif is_list_of_int(chord_set[i]):
+#                 chord_set[i] = [j + fix for j in chord_set[i]]
+#
+#     if type(chord_set[0]) == int:
+#         to_track.append(
+#             Message('note_on', note=chord_set[0], velocity=velocity_set[0], time=offset, channel=to_channel))
+#         to_track.append(
+#             Message('note_off', note=chord_set[0], velocity=velocity_set[0], time=times_set[0], channel=to_channel))
+#     elif is_list_of_int(chord_set[0]):
+#         add_chord_set(to_track, chord_set[0], velocity_set[0], offset, times_set[0], arpeggio_time, to_channel)
+#     elif chord_set[0][0] == 'delay_on':
+#         to_track.append(Message('control_change', channel=to_channel, control=64, value=127))
+#     elif chord_set[0][0] == 'delay_off':
+#         to_track.append(Message('control_change', channel=to_channel, control=64, value=0))
+#     for i in range(1, len(chord_set)):
+#         if type(chord_set[i]) == int:
+#             to_track.append(Message('note_on', note=chord_set[i], velocity=velocity_set[i], time=0, channel=to_channel))
+#             to_track.append(
+#                 Message('note_off', note=chord_set[i], velocity=velocity_set[i], time=times_set[i], channel=to_channel))
+#         elif is_list_of_int(chord_set[i]):
+#             add_chord_set(to_track, chord_set[i], velocity_set[i], 0, times_set[i], arpeggio_time, to_channel)
+#         elif chord_set[i][0] == 'delay_on':
+#             to_track.append(Message('control_change', channel=to_channel, control=64, value=127))
+#         elif chord_set[i][0] == 'delay_off':
+#             to_track.append(Message('control_change', channel=to_channel, control=64, value=0))
+#     n = -1
+#     while type(chord_set[n]) != int and not is_list_of_int(chord_set[n]):
+#         n -= 1
+#     if type(chord_set[-1]) == int:
+#         return chord_set[-1]
+#     elif is_list_of_int(chord_set[-1]):
+#         return chord_set[-1][-1]
 
 #
 # def sharp(messages):
@@ -647,10 +672,7 @@ def add_branch(branch_type, notes_name, refer, default_time, default_velocity, d
                 transposition = default_transposition
                 unison = False
             else:
-                if note == '#' or note == '^':
-                    branch_text[-2] += note
-                else:
-                    branch_text[-1] += note
+                branch_text[-1] += note
                 if 96 < ord(note) < 104:
                     branch_text.append('')
             continue
@@ -719,6 +741,7 @@ def add_branch(branch_type, notes_name, refer, default_time, default_velocity, d
             continue
         if note == '$':
             refer = default_refer
+            unison = True
             continue
         if note == '*':
             message_box.append([])
@@ -761,10 +784,11 @@ def add_branch(branch_type, notes_name, refer, default_time, default_velocity, d
             continue
     if branch_type == 0:
         message_list = make_list(message_box)
-        print(message_list)
-        sorted_list = sorted(message_list, key=lambda x: x[3])
+        sorted_list = sorted(message_list, key=lambda x: (x[3], ord(x[0][6]), x[2]))
+        print('s',sorted_list)
         for i in range(len(sorted_list) - 1, 0, -1):
             sorted_list[i][3] = sorted_list[i][3] - sorted_list[i - 1][3]
+        print('p', sorted_list)
         return sorted_list
     elif branch_type == 1:
         return message_box, refer, descend, the_time
@@ -787,30 +811,30 @@ def add_line(to_mid, track_num, notes_name, velocity=default_volume, offset=0, d
                 Message(message[0], note=message[1], velocity=message[2], time=message[3], channel=track_num))
 
 
-def add(to_mid, track_num, notes_name, velocity=default_volume, offset=0, duration=0.5, transposition=0,
-        arpeggio_time=0):
-    """添加通用音乐记号，包括和弦和琶音"""
-    to_track = to_mid.tracks[track_num]
-    times = int(480 * duration)
-    chords = notes_name.split(';')
-    last_note = add_seq(to_track, chords[0], velocity, offset, times, transposition, arpeggio_time=arpeggio_time,
-                        to_channel=track_num)
-    if chords[0] == '':
-        next_offset = offset
-    else:
-        next_offset = 0
-    flag = 1
-    for i, chord in enumerate(chords[1:]):
-        if flag == 0:
-            last_note = add_seq(to_track, chord, velocity, next_offset, times, transposition, last_note=last_note,
-                                arpeggio_time=arpeggio_time, to_channel=track_num)
-            flag = 1
-        else:
-            last_note = add_seq(to_track, chord, velocity, next_offset, times, transposition, True, last_note=last_note,
-                                arpeggio_time=arpeggio_time, to_channel=track_num)
-            flag = 0
-        if chord != '':
-            next_offset = 0
+# def add(to_mid, track_num, notes_name, velocity=default_volume, offset=0, duration=0.5, transposition=0,
+#         arpeggio_time=0):
+#     """添加通用音乐记号，包括和弦和琶音"""
+#     to_track = to_mid.tracks[track_num]
+#     times = int(480 * duration)
+#     chords = notes_name.split(';')
+#     last_note = add_seq(to_track, chords[0], velocity, offset, times, transposition, arpeggio_time=arpeggio_time,
+#                         to_channel=track_num)
+#     if chords[0] == '':
+#         next_offset = offset
+#     else:
+#         next_offset = 0
+#     flag = 1
+#     for i, chord in enumerate(chords[1:]):
+#         if flag == 0:
+#             last_note = add_seq(to_track, chord, velocity, next_offset, times, transposition, last_note=last_note,
+#                                 arpeggio_time=arpeggio_time, to_channel=track_num)
+#             flag = 1
+#         else:
+#             last_note = add_seq(to_track, chord, velocity, next_offset, times, transposition, True, last_note=last_note,
+#                                 arpeggio_time=arpeggio_time, to_channel=track_num)
+#             flag = 0
+#         if chord != '':
+#             next_offset = 0
 
 
 def set_track(to_midi, program=0, name=None, bmp=120, offset=0):
@@ -856,7 +880,7 @@ def get_choir(choir_string):
     if on_note is not None:
         on_note = on_note.replace(' ', '')
     if add_note is not None:
-        add_note = add_note.replace(' ', '').split(',')
+        add_note = add_note.replace(' ', '').split('\\')
 
     if len(name) == 1:
         root = notes_h[name]
@@ -892,7 +916,7 @@ def get_choir(choir_string):
     elif choir_type == 'aug':
         choir_set = [root, root + 4, root + 8]
     elif choir_type == 'sus2':
-        choir_set = [root, root + 3, root + 7]
+        choir_set = [root, root + 2, root + 7]
     elif choir_type == 'sus4':
         choir_set = [root, root + 5, root + 7]
     elif choir_type == '7':
@@ -940,7 +964,7 @@ def choir(choir_string, duration=4):
 
 def arpeggio(root_string, note_num=8, total_duration=4.0):
     """使用和弦术语生成对应的琶音伴奏midiTex，支持序列输入，用;分隔"""
-    arpeggio_string = ';'
+    arpeggio_string = ''
     if note_num % 2 == 0:
         duration = str(total_duration / note_num)
     else:
@@ -949,7 +973,7 @@ def arpeggio(root_string, note_num=8, total_duration=4.0):
     roots = root_string.split(';')
     for root in roots:
         note_set = get_choir(root)[:-1].split(' ')
-        arpeggio_string = arpeggio_string + duration + note_set[0] + ';' + duration + note_set[2]
+        arpeggio_string = arpeggio_string + '$' + duration + note_set[0] + duration + note_set[2]
         if note_num % 2 == 0:
             i = 0
             for i in range(3, note_num // 2 + 2):
@@ -968,7 +992,9 @@ def arpeggio(root_string, note_num=8, total_duration=4.0):
             for i in range((note_num + 1) // 2 + 2, note_num + 1):
                 last_i = last_i - 1
                 arpeggio_string = arpeggio_string + duration + note_set[last_i % len(note_set)]
-            arpeggio_string = arpeggio_string + '(0)[0]' + note_set[(last_i - 1) % len(note_set)]
+            arpeggio_string = arpeggio_string + '\\0[0]' + note_set[(last_i - 1) % len(note_set)]
+        arpeggio_string = arpeggio_string + ';'
+    print(arpeggio_string)
     return arpeggio_string
 
 
@@ -1364,7 +1390,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.Ui.note_browser.insertPlainText("]")
         else:
             self.note_browser_key_press_event(event)
-        print(event)
         if event.key() != Qt.Key_Control and event.text() != '\u001A' and event.text() != '\u0003' and event.text() != '\u0001' and event.text() != '\u0019' and event.key() != Qt.Key_Shift:
             self.text_brush()
         self.Ui.note_browser.textCursor().endEditBlock()
@@ -1562,6 +1587,8 @@ class MainWindow(QtWidgets.QMainWindow):
             temp = texts.split(':')
             if temp[0] == 'def':
                 continue
+            if len(temp) < 2:
+                continue
             track_para = temp[1].split(',')
             program = int(track_para[0])
             name = track_para[1]
@@ -1571,6 +1598,8 @@ class MainWindow(QtWidgets.QMainWindow):
             track_duration_total = duration_total
             track_offset = offset
             for para in track_para[2:]:
+                if para == '':
+                    continue
                 if para[0] == 't':
                     track_transposition = transposition + int(para[2:])
                 elif para[0] == 'v':
@@ -1614,29 +1643,44 @@ class MainWindow(QtWidgets.QMainWindow):
             note_offset = 0
             note_arp = 0
             note_para = temp[1].split(',')
+
             for note in note_para[1:]:
                 if note[0] == 't':
                     note_transposition = note_transposition + int(note[2:])
                 elif note[0] == 'v':
                     note_velocity = note_velocity + int(note[2:])
                 elif note[0] == 'd':
-                    note_duration = float(note[2:])
-                    note_duration_total = float(note[2:])
+
+                    duration_note = note[2:].split('/')
+                    if len(duration_note) == 1:
+                        note_duration = float(duration_note[0])
+                    else:
+                        if duration_note[0] != '':
+                            note_duration = float(duration_note[0])
+                        note_duration_total = float(duration_note[1])
                 elif note[0] == 'o':
                     note_offset = int(float(note[2:]) * 480)
                 elif note[0] == 'a':
                     note_arp = int(note[2:])
-            if note_para[0][:2] == 'ch':
-                notes_string = choir(note_para[0][3:-1], note_duration_total)
-            elif note_para[0][:2] == 'ar':
-                arp_num = note_para[0].split('(')
-                if len(arp_num[0]) > 2:
-                    note_num = int(arp_num[0][2:])
-                else:
-                    note_num = 4
-                notes_string = arpeggio(arp_num[1][:-1], note_num, note_duration_total)
-            else:
-                notes_string = note_para[0]
+            # if note_para[0][:2] == 'ch':
+            #     notes_string = choir(note_para[0][3:-1], note_duration_total)
+            # elif note_para[0][:2] == 'ar':
+            #     arp_num = note_para[0].split('(')
+            #     if len(arp_num[0]) > 2:
+            #         note_num = int(arp_num[0][2:])
+            #     else:
+            #         note_num = 4
+            #     notes_string = arpeggio(arp_num[1][:-1], note_num, note_duration_total)
+            # else:
+            #     notes_string = note_para[0]
+            for chs in extract_ch(note_para[0])[::-1]:
+                print(chs)
+                note_para[0] = note_para[0][:chs[1]] + choir(chs[0], note_duration_total) + note_para[0][chs[2]:]
+            for arps in extract_ar(note_para[0])[::-1]:
+                print(arps)
+                note_para[0] = note_para[0][:arps[1]] + arpeggio(arps[0],int(arps[3]),note_duration_total) + note_para[0][arps[2]:]
+            print(note_para[0])
+            notes_string = note_para[0]
             add_line(mid, track, notes_string, note_velocity, note_offset, note_duration, note_transposition, note_arp)
             # add(mid, track, notes_string, note_velocity, note_offset, note_duration, note_transposition, note_arp)
 
@@ -1693,6 +1737,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.Ui.note_browser.setText(strings[2])
 
         self.track_brush()
+        self.text_brush()
 
     def new_file(self):
         with open("midiTex/Default", "r") as f:

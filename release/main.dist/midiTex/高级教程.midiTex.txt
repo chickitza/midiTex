@@ -1,0 +1,60 @@
+高级教程, bpm=72, v=60, t=0, d=0.5/1.5
+%%%
+0: 54, doo
+1: 46, piano, v=-24, t=-12
+2: 4,, v=-12, t=0
+def: tr = [1.5], hf = [0.5], 单音=,音符集合=
+%%%
+欢迎来到高级教程。
+part 1 音轨
+
+可以自由添加音轨，例如0、1、2是音轨标识，而54、46、4是乐器编号，按ctrl+P查看乐器列表，可以点击试音。
+
+音轨中def后的部分将会被替换，用于减轻重复输入负担。
+
+d参数 duration 以?/?形式出现，分别表示单音的时长和音符集合的总时长。
+音符集合包括和弦ch和琶音ar。使用ch表示和弦能够减少书写量并增加可读性。
+
+part 2 和弦
+
+ch 是和弦标识，例如C = {ceg}表示C大调，Cmin = {c^eg}表示C小调
+多个和弦之间用;分隔
+
+dim和aug分别表示减三和弦和增三和弦Cdim = {c^e^g},Caug = {ce#g}
+此外Csus4 = {cfg} Csus2 = {cdg} C7 = {cegb} ……
+on 表示转位和弦，ConG = {gce}
+add 表示额外音，可以有多个，用\分隔，如add6\9成为69和弦
+
+配合(ch()|)使用可以给和弦加上转音
+
+0: ch(C onG;Emin onG) (tr{ac}|e;d;e) (-tr{gc}|[1]g;f)
+0: (ch(Fadd6;Edimadd6)|[2.5]*e) $(tr{gb}|d;#c;d) (ch(G7)|;**g)
+0: ch(C onG;Emin onG) (tr{ac}|e;d;e)(-tr{gc}|[1]g;f)
+0: (defa;gb;cegc**| ch(Dmin;G) ch(ConE))
+
+part 3 多音轨
+
+使用休止符来表示音轨插入的时机
+1: [36]*
+2: [24]*
+
+各音轨同时进行，互不干扰
+$起与换行相同的效果
+
+0: ch(C onG;E onG) (tr{ac}|e;d;e) (-tr{gc}|[1]g;f)
+2: ceg ;b;eg ;[1]a;e ;g;eg
+
+0: (ch(Fadd6;Edimadd6\9)|[2.5]*e) $(tr{gb}|d;#c;d) (ch(Gaddb7)|**e)
+2: ;daf; ^d;^bg ;d;^dg ;d;bg
+
+part 4 琶音
+ar?()表示琶音，其中?表示琶音数量，括号内解析方法与和弦相同。
+
+0: ch(C onG;Emin onG) (tr{ac}|e;d;e)(-tr{gc}|[1]g;f)
+1: ar9(C;Emin;Amin;C),d=/1.5
+2: ceg ;b;eg ;[1]a;e ;g;eg
+
+
+0: (defa;gb;cegc**|ch(Dmin;G)ch(ConE))
+1: def gab cde fga b;gd ;d;cb ;hfc;\24hfe;\24hfg \36c ,d=0.166666667
+2: fga;fdg;-gce;g
