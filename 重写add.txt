@@ -1,0 +1,20 @@
+0: c-c g-g a-a ;&[2]{ceg}\;gabc f-f e-e d-d [2]{egc}
+传入descend，默认duration（time in add_seq）
+
+返回参数list
+[['note_on',note,velocity,time],['note_off',note,velocity,time]]
+最后
+
+转移默认duration的判定至duration_set的生成过程
+
+迭代单位：串
+传入参数：
+起始增减性（从前一个传出，传入后一个）
+refer：主子串从主串获取，其它子串从主子串获取（返回）
+时长：初始设定，添加音符或所有子串后还原，传入子串
+添加音符后改变参考时间，添加子串后按主子串改变参考时间
+-符：传入子串，添加音符或所有子串后还原
+串标识：主串、主子串、子串。主串返回排序后的参数，子串返回音符参数，主子串返回结束时间、refer和增减性
+结束各子串后refer为主串最后
+
+0: c-c g-g a-a ;\10[0.5]([2]{ceg}|;gabc) f-f (e-e|c-c) d-d [2]{egc}
