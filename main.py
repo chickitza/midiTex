@@ -673,7 +673,7 @@ def add_branch(branch_type, notes_name, refer, default_time, default_velocity, d
                 unison = False
             else:
                 branch_text[-1] += note
-                if 96 < ord(note) < 104:
+                if 96 < ord(note) < 104 or note == '!':
                     branch_text.append('')
             continue
         if depth > 0:
@@ -742,6 +742,19 @@ def add_branch(branch_type, notes_name, refer, default_time, default_velocity, d
         if note == '$':
             refer = default_refer
             unison = True
+            continue
+        if note == '!':
+            if unison:
+                note_to_add = fit_in_range(refer, refer - 6, refer + 6)
+                unison = False
+            elif descend:
+                note_to_add = fit_in_range(refer, refer - 12, refer - 1)
+            else:
+                note_to_add = fit_in_range(refer, refer + 1, refer + 12)
+            message_box.append([])
+            message_box[-1].append(['note_on', note_to_add, 0, 0])
+            message_box[-1].append(['note_off', note_to_add, 0, 0])
+            refer = note_to_add
             continue
         if note == '*':
             message_box.append([])
@@ -1559,7 +1572,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # 解析midi参数
         for para in midi_para[1:]:
             if para[:3] == 'bpm':
-                bmp = int(para[4:])
+                bmp = int(round(float(para[4:])))
             elif para[0] == 't':
                 transposition = int(para[2:])
             elif para[0] == 'v':
@@ -1650,10 +1663,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 elif note[0] == 'v':
                     note_velocity = note_velocity + int(note[2:])
                 elif note[0] == 'd':
-
                     duration_note = note[2:].split('/')
                     if len(duration_note) == 1:
                         note_duration = float(duration_note[0])
+                        note_duration_total = float(duration_note[0])
                     else:
                         if duration_note[0] != '':
                             note_duration = float(duration_note[0])
@@ -1724,6 +1737,11 @@ class MainWindow(QtWidgets.QMainWindow):
             file.write(notes_text + '\n')
 
     def open_file(self):
+        if self.colorful_text:
+            colorful_text_reset_flag = True
+        else:
+            colorful_text_reset_flag = False
+        self.colorful_text = False
         path = QtWidgets.QFileDialog.getOpenFileName(self, "打开文件", "./midiTex/")
         # Open the file for reading
         if path[0] != '':
@@ -1736,6 +1754,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.Ui.track_browser.setText(strings[1])
         self.Ui.note_browser.setText(strings[2])
 
+        if colorful_text_reset_flag:
+            self.colorful_text = True
         self.track_brush()
         self.text_brush()
 

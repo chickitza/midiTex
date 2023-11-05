@@ -34,7 +34,7 @@ def: do=[2],hf=\50[0.5],qt=\50[0.25]
 3: ar8(C)
 
 0: {cfa}cf;e[3]{gbd}{fgc}-[4]{egc},t=-12
-1: ch(F;G;C),t=-12
+1: !ch(F;G;C),t=-12
 2: ;gfdc[3]b;g[4]{ec}
 3: ar8(F;G;C),t=-12
 3: c
